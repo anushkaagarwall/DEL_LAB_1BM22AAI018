@@ -1,0 +1,82 @@
+import numpy as np
+import pandas as pd
+
+df = pd.read_csv('play_tennis.csv')
+
+print("Columns in DataFrame:", df.columns)
+
+
+df.columns = df.columns.str.strip()
+if 'Outlook' in df.columns:
+    df['Outlook'] = df['Outlook'].map({'Sunny': 5, 'Overcast': 1, 'Rain': 1})
+else:
+    raise KeyError("Column 'Outlook' not found in the DataFrame.")
+
+if 'Temperature' in df.columns:
+    df['Temperature'] = df['Temperature'].map({'Cool': 0, 'Mild': 3, 'Hot': 5})
+else:
+    raise KeyError("Column 'Temperature' not found in the DataFrame.")
+
+if 'Humidity' in df.columns:
+    df['Humidity'] = df['Humidity'].map({'High': 1, 'Normal': 5})
+else:
+    raise KeyError("Column 'Humidity' not found in the DataFrame.")
+
+if 'Windy' in df.columns:
+    df['Windy'] = df['Windy'].astype(int)
+else:
+    raise KeyError("Column 'Windy' not found in the DataFrame.")
+
+if 'Play Tennis' in df.columns: 
+    df['Play Tennis'] = df['Play Tennis'].map({'no': 0, 'yes': 1})
+else:
+    raise KeyError("Column 'Play Tennis' not found in the DataFrame.")
+
+
+X = df[['Outlook', 'Temperature', 'Humidity', 'Windy']].values
+y = df['Play Tennis'].values
+class Perceptron:
+    def __init__(self, learning_rate=0.1, n_iter=1000):
+        self.learning_rate = learning_rate
+        self.n_iter = n_iter
+        self.weights = None
+        self.bias = None
+
+    def fit(self, X, y):
+        n_samples, n_features = X.shape
+        self.weights = np.zeros(n_features)
+        self.bias = 0
+
+        for _ in range(self.n_iter):
+    
+            linear_output = np.dot(X, self.weights) + self.bias
+            y_predicted = self.activation_function(linear_output)
+
+            error = y - y_predicted
+            mse = np.mean(error ** 2)
+
+            gradient = -2 * np.dot(X.T, error) / n_samples
+            self.weights -= self.learning_rate * gradient
+            self.bias -= self.learning_rate * np.mean(error)
+
+    def activation_function(self, x):
+        return 1 / (1 + np.exp(-x))
+
+    def predict(self, X):
+        linear_output = np.dot(X, self.weights) + self.bias
+        y_predicted = self.activation_function(linear_output)
+        return np.where(y_predicted >= 0.5, 1, 0)
+
+perceptron = Perceptron(learning_rate=0.1, n_iter=100)  
+perceptron.fit(X, y)
+
+predictions = perceptron.predict(X)
+
+results = pd.DataFrame({'Actual': y, 'Predicted': predictions})
+print(results)
+
+accuracy = np.mean(predictions == y)
+print(f"Accuracy: {accuracy * 100:.2f}%")
+
+
+
