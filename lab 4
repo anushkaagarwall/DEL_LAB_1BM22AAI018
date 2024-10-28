@@ -1,0 +1,70 @@
+#design a deep multilayer perceptron neural network and optimize the network with gradient descent and optimize the same with sthocastic gradient descent
+import numpy as np
+def relu(x):
+    return np.maximum(0, x)
+
+def relu_derivative(x):
+    return (x > 0).astype(float)
+
+def softmax(x):
+    exp_x = np.exp(x - np.max(x))
+    return exp_x / exp_x.sum(axis=1, keepdims=True)
+
+def initialize_parameters(input_size, hidden_sizes, output_size):
+    layers = []
+    layer_sizes = [input_size] + hidden_sizes + [output_size]
+    for i in range(len(layer_sizes) - 1):
+        W = np.random.randn(layer_sizes[i], layer_sizes[i + 1]) * 0.01
+        b = np.zeros((1, layer_sizes[i + 1]))
+        layers.append((W, b))
+    return layers
+
+def forward_pass(X, layers):
+    a = X
+    activations = [X]
+    for W, b in layers[:-1]:
+        z = np.dot(a, W) + b
+        a = relu(z)
+        activations.append(a)
+ 
+    W, b = layers[-1]
+    z = np.dot(a, W) + b
+    a = softmax(z)
+    activations.append(a)
+    return a, activations
+
+def backward_pass(X, y, layers, activations):
+    m = y.shape[0]
+    grads = []
+   
+    dz = activations[-1] - y
+    W, b = layers[-1]
+    grads.append((np.dot(activations[-2].T, dz) / m, np.sum(dz, axis=0, keepdims=True) / m))
+    
+
+    for i in reversed(range(len(layers) - 1)):
+        dz = np.dot(dz, W.T) * relu_derivative(activations[i + 1])
+        W, b = layers[i]
+        grads.append((np.dot(activations[i].T, dz) / m, np.sum(dz, axis=0, keepdims=True) / m))
+    
+    return list(reversed(grads))
+
+
+def update_parameters(layers, grads, learning_rate):
+    for i in range(len(layers)):
+        W, b = layers[i]
+        dW, db = grads[i]
+        layers[i] = (W - learning_rate * dW, b - learning_rate * db)
+
+
+def train(X, y, input_size, hidden_sizes, output_size, epochs, learning_rate):
+    layers = initialize_parameters(input_size, hidden_sizes, output_size)
+    for epoch in range(epochs):
+  
+        predictions, activations = forward_pass(X, layers)
+      
+        grads = backward_pass(X, y, layers, activations)
+    
+        update_parameters(layers, grads, learning_rate)
+        if epoch % 100 == 0:
+            print(f'Epoch {epoch}: Loss {loss}')  
